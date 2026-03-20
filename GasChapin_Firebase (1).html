@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Gas Chapin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0f1923;--surface:#1a2535;--surface2:#212f42;--border:#2a3545;
+  --accent:#e85d04;--accent2:#f48c06;--text:#f0ece0;--muted:#8899aa;
+  --success:#059669;--info:#2563eb;--danger:#dc2626;
+  --r:12px;--font:'DM Sans',sans-serif;--display:'Bebas Neue',sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ─── SETUP SCREEN ─── */
+#setup-screen{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;background:radial-gradient(ellipse at top,#1f2f40 0%,var(--bg) 70%);
+}
+.setup-logo{text-align:center;margin-bottom:28px;}
+.setup-logo .flame{font-size:56px;display:block;margin-bottom:6px;filter:drop-shadow(0 0 20px #f48c0688);}
+.setup-logo h1{font-family:var(--display);font-size:48px;letter-spacing:2px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;}
+.setup-box{background:var(--surface);border-radius:18px;padding:28px;width:100%;max-width:500px;border:1px solid var(--border);}
+.setup-box h2{font-size:16px;font-weight:700;margin-bottom:6px;}
+.setup-box p{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6;}
+.setup-box textarea{
+  width:100%;height:180px;padding:12px 14px;background:#0f1923;border:1px solid var(--border);
+  border-radius:10px;color:#f48c06;font-family:monospace;font-size:12px;outline:none;
+  resize:vertical;line-height:1.6;transition:border-color .2s;
+}
+.setup-box textarea:focus{border-color:var(--accent);}
+.step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
+.step-num{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:700;font-size:12px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step p{font-size:13px;color:var(--muted);margin:0;line-height:1.5;}
+.step p strong{color:var(--text);}
+.step p a{color:var(--accent2);}
+.setup-err{color:#f87171;font-size:13px;margin-top:8px;display:none;}
+
+/* ─── LOGIN ─── */
+#login-screen{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;background:radial-gradient(ellipse at top,#1f2f40 0%,var(--bg) 70%);
+  display:none;
+}
+.login-logo{text-align:center;margin-bottom:32px;}
+.login-logo .flame{font-size:60px;display:block;filter:drop-shadow(0 0 24px #f48c0688);}
+.login-logo h1{font-family:var(--display);font-size:52px;letter-spacing:2px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;}
+.login-logo p{color:var(--muted);font-size:14px;margin-top:4px;}
+.login-tabs{display:flex;background:var(--surface);border-radius:var(--r);padding:4px;margin-bottom:22px;width:100%;max-width:360px;}
+.login-tab{flex:1;padding:10px;border:none;border-radius:9px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;background:none;color:var(--muted);}
+.login-tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.login-box{background:var(--surface);border-radius:16px;padding:28px;width:100%;max-width:360px;border:1px solid var(--border);}
+.login-box h2{font-size:16px;font-weight:700;margin-bottom:20px;}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;}
+.field input{width:100%;padding:11px 14px;background:#0f1923;border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;}
+.field input:focus{border-color:var(--accent);}
+.field{margin-bottom:14px;}
+.btn-login{width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:6px;}
+.btn-login:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,93,4,.4);}
+.login-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:14px;}
+.login-hint strong{color:var(--accent2);}
+.login-err{color:#f87171;font-size:13px;margin-top:8px;text-align:center;display:none;}
+
+/* ─── APP ─── */
+#app{display:none;flex-direction:column;min-height:100vh;}
+.topbar{background:linear-gradient(135deg,var(--accent),var(--accent2));padding:13px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(232,93,4,.35);position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar-logo{font-family:var(--display);font-size:26px;color:#fff;letter-spacing:1px;}
+.topbar-role{font-size:11px;background:rgba(0,0,0,.25);padding:3px 9px;border-radius:20px;color:#fff;font-weight:700;}
+.btn-logout{background:rgba(0,0,0,.25);border:none;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:var(--font);}
+.nav-tabs{display:flex;background:#141e2a;border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:52px;z-index:99;}
+.nav-tab{flex:1;min-width:70px;padding:11px 6px;border:none;background:none;color:var(--muted);font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;}
+.nav-tab.active{color:var(--accent2);border-bottom-color:var(--accent2);background:rgba(244,140,6,.07);}
+.nav-tab:hover{color:var(--text);background:rgba(255,255,255,.04);}
+.page{display:none;padding:16px;max-width:640px;margin:0 auto;padding-bottom:40px;}
+.page.active{display:block;}
+
+/* ─── COMPONENTS ─── */
+.card{background:var(--surface);border-radius:var(--r);padding:18px;margin-bottom:14px;border:1px solid var(--border);}
+.card-title{font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:14px;}
+.fi label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+.fi input,.fi select{width:100%;padding:10px 14px;background:#0f1923;border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;}
+.fi input:focus{border-color:var(--accent);}
+.fi{margin-bottom:13px;}
+.btn{display:block;width:100%;padding:12px;border-radius:10px;border:none;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;text-align:center;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(232,93,4,.4);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-danger{background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;}
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;display:inline-block;}
+.badge-25{background:#1a3a4a;color:#60a5fa;}
+.badge-35{background:#2a2a1a;color:#fcd34d;}
+.badge-100{background:#2a1a2a;color:#c084fc;}
+.alert{padding:12px 16px;border-radius:10px;margin-bottom:12px;font-size:14px;line-height:1.5;}
+.alert-success{background:#064e3b;border:1px solid #059669;color:#6ee7b7;}
+.alert-info{background:#1e3a5f;border:1px solid #2563eb;color:#93c5fd;}
+.alert-party{background:#2b1a0d;border:2px solid var(--accent2);color:#fcd34d;text-align:center;font-size:15px;font-weight:700;padding:18px;border-radius:12px;}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.stat-box{background:var(--surface);border-radius:var(--r);padding:16px 10px;text-align:center;border:1px solid var(--border);}
+.stat-num{font-family:var(--display);font-size:36px;color:var(--accent2);letter-spacing:1px;}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:2px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.client-row{background:var(--surface);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:border-color .2s,background .2s;}
+.client-row:hover{border-color:var(--accent);background:var(--surface2);}
+.client-name{font-weight:700;font-size:15px;}
+.client-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.client-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.prog-row{margin-bottom:13px;}
+.prog-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;}
+.prog-bar{height:8px;background:#0f1923;border-radius:4px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:4px;transition:width .6s ease;}
+.fill-25{background:linear-gradient(90deg,#1d4ed8,#60a5fa);}
+.fill-35{background:linear-gradient(90deg,#b45309,#fcd34d);}
+.fill-100{background:linear-gradient(90deg,#7c3aed,#c084fc);}
+.purch-item{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.purch-item:last-child{border-bottom:none;}
+.qr-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 0;}
+.qr-id{font-size:11px;color:var(--muted);letter-spacing:3px;font-family:monospace;}
+.stars{display:flex;gap:5px;flex-wrap:wrap;}
+.star{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+.star-full{background:var(--accent2);color:#fff;}
+.star-empty{background:var(--surface2);color:var(--muted);}
+.star-promo{background:linear-gradient(135deg,var(--success),#34d399);color:#fff;animation:pulse 1.4s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
+.pres-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:10px 0;}
+.pres-btn{padding:14px 8px;border-radius:10px;border:2px solid var(--border);background:#0f1923;color:var(--muted);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s;}
+.pres-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+.pres-btn.sel{border-color:var(--accent);background:#2b1a0d;color:var(--accent2);}
+.notif-banner{background:linear-gradient(135deg,#064e3b,#065f46);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;border:1px solid #059669;display:flex;align-items:center;gap:12px;cursor:pointer;transition:transform .2s;}
+.notif-banner:hover{transform:scale(1.01);}
+.notif-icon{font-size:26px;flex-shrink:0;}
+.notif-title{font-weight:700;color:#d1fae5;font-size:14px;}
+.notif-sub{font-size:12px;color:#6ee7b7;margin-top:2px;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:center;justify-content:center;padding:16px;overflow-y:auto;}
+.overlay.show{display:flex;}
+.modal{background:var(--surface);border-radius:18px;padding:24px;width:100%;max-width:440px;border:1px solid var(--border);max-height:90vh;overflow-y:auto;}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.modal-title{font-size:18px;font-weight:700;}
+.modal-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;line-height:1;padding:0;}
+.search-wrap{position:relative;margin-bottom:14px;}
+.search-wrap input{padding-left:38px;width:100%;padding-top:10px;padding-bottom:10px;background:#0f1923;border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;}
+.search-wrap input:focus{border-color:var(--accent);}
+.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--muted);}
+.empty{text-align:center;padding:36px 20px;color:var(--muted);font-size:14px;}
+.empty-ico{font-size:40px;margin-bottom:10px;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.loading{text-align:center;padding:30px;color:var(--muted);}
+.spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     SETUP SCREEN
+══════════════════════════════════ -->
+<div id="setup-screen">
+  <div class="setup-logo">
+    <span class="flame">🔥</span>
+    <h1>Gas Chapin</h1>
+  </div>
+  <div class="setup-box">
+    <h2>⚙️ Configuración inicial — Firebase</h2>
+    <p>Pega aquí el bloque <code style="color:var(--accent2)">firebaseConfig</code> que copiaste de Firebase. Solo se hace una vez.</p>
+
+    <div class="step"><div class="step-num">1</div><p>Ve a <a href="https://firebase.google.com" target="_blank">firebase.google.com</a> e inicia sesión con Gmail</p></div>
+    <div class="step"><div class="step-num">2</div><p><strong>Crear proyecto</strong> → nombre "Gas Chapin" → desactiva Analytics → Crear</p></div>
+    <div class="step"><div class="step-num">3</div><p><strong>Compilación → Realtime Database</strong> → Crear base de datos → modo prueba → Listo</p></div>
+    <div class="step"><div class="step-num">4</div><p>⚙️ <strong>Configuración del proyecto</strong> → Tus apps → icono <code>&lt;/&gt;</code> → Registrar app → copia el bloque <code>firebaseConfig</code></p></div>
+
+    <div style="margin-top:18px;">
+      <label style="display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">Pega tu firebaseConfig aquí</label>
+      <textarea id="fb-config-input" placeholder='const firebaseConfig = {
+  apiKey: "AIza...",
+  authDomain: "tu-proyecto.firebaseapp.com",
+  databaseURL: "https://tu-proyecto-default-rtdb.firebaseio.com",
+  projectId: "tu-proyecto",
+  storageBucket: "tu-proyecto.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abc123"
+};'></textarea>
+      <div class="setup-err" id="setup-err">No se pudo conectar. Verifica que pegaste el bloque completo y que la Realtime Database esté creada.</div>
+      <button class="btn-login" style="margin-top:14px;" onclick="initFirebase()">Conectar y entrar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     LOGIN
+══════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-logo">
+    <span class="flame">🔥</span>
+    <h1>Gas Chapin</h1>
+    <p>Sistema de Lealtad</p>
+  </div>
+  <div class="login-tabs">
+    <button class="login-tab active" onclick="switchTab('admin')">Administrador</button>
+    <button class="login-tab" onclick="switchTab('client')">Soy Cliente</button>
+  </div>
+
+  <div class="login-box" id="lb-admin">
+    <h2>🔑 Acceso Administrativo</h2>
+    <div class="field"><label>Usuario</label><input type="text" id="adm-user" placeholder="admin" autocomplete="username"></div>
+    <div class="field"><label>Contraseña</label><input type="password" id="adm-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginAdmin()"></div>
+    <button class="btn-login" onclick="loginAdmin()">Ingresar</button>
+    <div class="login-err" id="adm-err">Usuario o contraseña incorrectos</div>
+    <p class="login-hint">Usuario: <strong>admin</strong> · Contraseña: <strong>chapin2024</strong></p>
+  </div>
+
+  <div class="login-box" id="lb-client" style="display:none;">
+    <h2>👤 Acceso de Cliente</h2>
+    <div class="field"><label>Tu código de cliente (en tu QR)</label><input type="text" id="cl-id" placeholder="GC-AB12CD" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')loginClient()"></div>
+    <button class="btn-login" onclick="loginClient()">Ver mis puntos</button>
+    <div class="login-err" id="cl-err">Código no encontrado. Pide tu registro al negocio.</div>
+    <p class="login-hint">Tu código aparece en el QR que te dieron al registrarte.</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     APP
+══════════════════════════════════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span style="font-size:22px;">🔥</span>
+      <span class="topbar-logo">Gas Chapin</span>
+      <span class="topbar-role" id="role-badge">Admin</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span id="sync-indicator" style="font-size:11px;color:rgba(255,255,255,.6);"></span>
+      <button class="btn-logout" onclick="logout()">Salir</button>
+    </div>
+  </div>
+  <div class="nav-tabs" id="nav-tabs"></div>
+
+  <!-- Dashboard -->
+  <div class="page" id="page-dashboard">
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num" id="st-cl">0</div><div class="stat-lbl">Clientes</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-comp">0</div><div class="stat-lbl">Compras</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-desc">0</div><div class="stat-lbl">Descuentos</div></div>
+    </div>
+    <div id="notif-area"></div>
+    <div class="card">
+      <div class="card-title">Actividad reciente</div>
+      <div id="recent-list"><div class="empty"><div class="empty-ico">📋</div>Sin actividad aún</div></div>
+    </div>
+  </div>
+
+  <!-- Clientes -->
+  <div class="page" id="page-clientes">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="cl-search" placeholder="Buscar por nombre o ID…" oninput="renderClientList()">
+    </div>
+    <div id="client-list"><div class="loading"><div class="spinner"></div><div>Cargando clientes…</div></div></div>
+  </div>
+
+  <!-- Nuevo -->
+  <div class="page" id="page-nuevo">
+    <div class="card">
+      <div class="card-title">Registrar nuevo cliente</div>
+      <div class="fi"><label>Nombre completo</label><input type="text" id="r-nombre" placeholder="María López"></div>
+      <div class="fi"><label>Teléfono</label><input type="tel" id="r-tel" placeholder="5523-4567"></div>
+      <button class="btn btn-primary" onclick="registerClient()">Registrar y generar QR</button>
+    </div>
+    <div id="reg-result" style="display:none;">
+      <div class="card">
+        <div class="card-title">✅ Cliente registrado</div>
+        <div class="qr-wrap"><div id="qr-new"></div><div class="qr-id" id="qr-new-id"></div></div>
+        <p style="font-size:13px;color:var(--muted);text-align:center;margin-top:6px;">Presenta este QR en cada compra</p>
+        <button class="btn btn-secondary" style="margin-top:12px;" onclick="window.print()">🖨️ Imprimir QR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scanner -->
+  <div class="page" id="page-scanner">
+    <div class="card">
+      <div class="card-title">Buscar cliente</div>
+      <div style="background:#0f1923;border:2px dashed var(--border);border-radius:12px;padding:26px;text-align:center;margin-bottom:14px;">
+        <div style="font-size:42px;margin-bottom:6px;">📷</div>
+        <div style="color:var(--muted);font-size:13px;">Escanea el QR del cliente con la cámara del celular</div>
+        <div style="font-size:12px;color:#556677;margin-top:4px;">o búscalo por nombre abajo</div>
+      </div>
+      <div class="fi"><label>Buscar por nombre o ID</label><input type="text" id="scan-q" placeholder="Nombre o GC-…" oninput="renderScanResults()"></div>
+      <div id="scan-results"></div>
+    </div>
+  </div>
+
+  <!-- Compra -->
+  <div class="page" id="page-compra">
+    <div class="card">
+      <div class="card-title">Registrar compra</div>
+      <div class="alert alert-info">Busca al cliente aquí o selecciónalo desde "Clientes"</div>
+      <div class="fi"><label>Buscar cliente</label><input type="text" id="comp-q" placeholder="Nombre…" oninput="renderCompraSearch()"></div>
+      <div id="comp-results"></div>
+    </div>
+  </div>
+
+  <!-- Mi cuenta (cliente) -->
+  <div class="page" id="page-micuenta">
+    <div id="micuenta-content"><div class="loading"><div class="spinner"></div><div>Cargando tu cuenta…</div></div></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: cliente ═══ -->
+<div class="overlay" id="ov-client">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="mc-name">Cliente</div><button class="modal-close" onclick="closeOv('ov-client')">✕</button></div>
+    <div id="mc-body"></div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: compra ═══ -->
+<div class="overlay" id="ov-compra">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">Registrar compra</div><button class="modal-close" onclick="closeOv('ov-compra')">✕</button></div>
+    <div id="ov-comp-client" style="font-size:14px;color:var(--muted);margin-bottom:14px;"></div>
+    <div class="card-title">Selecciona presentación</div>
+    <div class="pres-grid">
+      <button class="pres-btn" onclick="selPres(this,'25')">🔵 25 Lb</button>
+      <button class="pres-btn" onclick="selPres(this,'35')">🟡 35 Lb</button>
+      <button class="pres-btn" onclick="selPres(this,'100')">🟣 100 Lb</button>
+    </div>
+    <div id="pres-preview" style="margin-top:10px;"></div>
+    <button class="btn btn-primary" onclick="confirmPurchase()" style="margin-top:14px;">✅ Confirmar compra</button>
+  </div>
+</div>
+
+<!-- ═══ MODAL: QR ═══ -->
+<div class="overlay" id="ov-qr">
+  <div class="modal" style="text-align:center;">
+    <div class="modal-hdr"><div class="modal-title" id="qrm-name">QR</div><button class="modal-close" onclick="closeOv('ov-qr')">✕</button></div>
+    <div class="qr-wrap"><div id="qrm-code"></div><div class="qr-id" id="qrm-id"></div></div>
+    <p style="font-size:13px;color:var(--muted);margin-top:8px;">Mostrar al empleado en cada compra</p>
+    <button class="btn btn-secondary" style="margin-top:12px;" onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get, push, onValue, remove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ══════════════════════════════════════════
+//  GLOBALS
+// ══════════════════════════════════════════
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'chapin2024';
+let db = null;
+let firebaseDB = null;
+let clients = {};
+let activity = [];
+let currentRole = null;
+let currentClientId = null;
+let compraClientId = null;
+let presSel = null;
+
+// ══════════════════════════════════════════
+//  FIREBASE INIT
+// ══════════════════════════════════════════
+window.initFirebase = async function() {
+  const raw = document.getElementById('fb-config-input').value.trim();
+  const err = document.getElementById('setup-err');
+  err.style.display = 'none';
+
+  // Extract config fields using regex - no eval needed
+  let config;
+  try {
+    function extractField(text, field) {
+      const match = text.match(new RegExp(field + '\\s*:\\s*["\']([^"\']+)["\']'));
+      return match ? match[1] : null;
+    }
+    config = {
+      apiKey:            extractField(raw, 'apiKey'),
+      authDomain:        extractField(raw, 'authDomain'),
+      databaseURL:       extractField(raw, 'databaseURL'),
+      projectId:         extractField(raw, 'projectId'),
+      storageBucket:     extractField(raw, 'storageBucket'),
+      messagingSenderId: extractField(raw, 'messagingSenderId'),
+      appId:             extractField(raw, 'appId'),
+      measurementId:     extractField(raw, 'measurementId'),
+    };
+    if (!config.apiKey || !config.databaseURL) throw new Error('Missing fields');
+  } catch(e) {
+    err.style.display = 'block';
+    err.textContent = 'El bloque pegado no es válido. Asegúrate de copiar todo el objeto { apiKey: "...", ... }';
+    return;
+  }
+
+  try {
+    const app = initializeApp(config);
+    firebaseDB = getDatabase(app);
+    // Test connection
+    const testRef = ref(firebaseDB, '.info/connected');
+    await get(testRef);
+    // Save config for next time
+    localStorage.setItem('gcFirebaseConfig', JSON.stringify(config));
+    showLogin();
+    startListeners();
+  } catch(e) {
+    err.style.display = 'block';
+    err.textContent = 'No se pudo conectar a Firebase. Verifica el config y que Realtime Database esté activa.';
+    console.error(e);
+  }
+};
+
+async function tryAutoConnect() {
+  const saved = localStorage.getItem('gcFirebaseConfig');
+  if (!saved) return;
+  try {
+    const config = JSON.parse(saved);
+    const app = initializeApp(config);
+    firebaseDB = getDatabase(app);
+    await get(ref(firebaseDB, '.info/connected'));
+    showLogin();
+    startListeners();
+  } catch(e) {
+    localStorage.removeItem('gcFirebaseConfig');
+  }
+}
+
+function startListeners() {
+  // Live listener for clients
+  onValue(ref(firebaseDB, 'clients'), snap => {
+    clients = snap.val() || {};
+    if (currentRole === 'admin') {
+      renderDashboard();
+      renderClientList();
+    } else if (currentRole === 'client') {
+      renderMiCuenta();
+    }
+    setSyncIndicator('✓ En línea');
+  });
+  // Live listener for activity
+  onValue(ref(firebaseDB, 'activity'), snap => {
+    const raw = snap.val() || {};
+    activity = Object.values(raw).sort((a,b) => b.ts - a.ts).slice(0,20);
+    if (currentRole === 'admin') renderRecentActivity();
+  });
+}
+
+function setSyncIndicator(text) {
+  document.getElementById('sync-indicator').textContent = text;
+}
+
+// ══════════════════════════════════════════
+//  SCREENS
+// ══════════════════════════════════════════
+function showLogin() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+window.switchTab = function(tab) {
+  document.querySelectorAll('.login-tab').forEach((b,i) => b.classList.toggle('active', (tab==='admin'&&i===0)||(tab==='client'&&i===1)));
+  document.getElementById('lb-admin').style.display = tab==='admin' ? 'block' : 'none';
+  document.getElementById('lb-client').style.display = tab==='client' ? 'block' : 'none';
+};
+
+window.loginAdmin = function() {
+  const u = document.getElementById('adm-user').value.trim();
+  const p = document.getElementById('adm-pass').value;
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    currentRole = 'admin';
+    startApp();
+  } else {
+    document.getElementById('adm-err').style.display = 'block';
+  }
+};
+
+window.loginClient = async function() {
+  const id = document.getElementById('cl-id').value.trim().toUpperCase();
+  const snap = await get(ref(firebaseDB, `clients/${id}`));
+  if (snap.exists()) {
+    currentRole = 'client';
+    currentClientId = id;
+    startApp();
+  } else {
+    document.getElementById('cl-err').style.display = 'block';
+  }
+};
+
+window.logout = function() {
+  currentRole = null; currentClientId = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('adm-user').value = '';
+  document.getElementById('adm-pass').value = '';
+  document.getElementById('cl-id').value = '';
+  document.getElementById('adm-err').style.display = 'none';
+  document.getElementById('cl-err').style.display = 'none';
+};
+
+// ══════════════════════════════════════════
+//  APP START
+// ══════════════════════════════════════════
+function startApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+  app.style.flexDirection = 'column';
+
+  if (currentRole === 'admin') {
+    document.getElementById('role-badge').textContent = 'Administrador';
+    buildNav([
+      {id:'dashboard', label:'🏠 Inicio'},
+      {id:'clientes',  label:'👥 Clientes'},
+      {id:'nuevo',     label:'➕ Nuevo'},
+      {id:'scanner',   label:'📷 Scanner'},
+      {id:'compra',    label:'🛒 Compra'},
+    ]);
+    showPage('dashboard');
+  } else {
+    document.getElementById('role-badge').textContent = 'Cliente';
+    buildNav([{id:'micuenta', label:'⭐ Mis Puntos'}]);
+    showPage('micuenta');
+    renderMiCuenta();
+  }
+}
+
+function buildNav(tabs) {
+  document.getElementById('nav-tabs').innerHTML = tabs.map(t =>
+    `<button class="nav-tab" id="ntab-${t.id}" onclick="showPage('${t.id}')">${t.label}</button>`
+  ).join('');
+}
+
+window.showPage = function(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  const pg = document.getElementById('page-'+id);
+  const tb = document.getElementById('ntab-'+id);
+  if (pg) pg.classList.add('active');
+  if (tb) tb.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'clientes') renderClientList();
+  if (id === 'scanner') { document.getElementById('scan-q').value=''; document.getElementById('scan-results').innerHTML=''; }
+  if (id === 'compra') { document.getElementById('comp-q').value=''; document.getElementById('comp-results').innerHTML=''; }
+};
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function genId() { return 'GC-' + Math.random().toString(36).substr(2,6).toUpperCase(); }
+function today() { return new Date().toLocaleDateString('es-GT'); }
+function timeNow() { return new Date().toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'}); }
+window.closeOv = function(id) { document.getElementById(id).classList.remove('show'); };
+
+function makeQR(divId, text) {
+  const el = document.getElementById(divId);
+  el.innerHTML = '';
+  new QRCode(el, {text, width:180, height:180, colorDark:'#e85d04', colorLight:'#1a2535'});
+}
+
+async function addActivity(text, type) {
+  const entry = {text, type, ts: Date.now(), time: timeNow()};
+  await push(ref(firebaseDB, 'activity'), entry);
+}
+
+function clientsArray() {
+  return Object.entries(clients).map(([id, c]) => ({...c, id}));
+}
+
+// ══════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════
+function renderDashboard() {
+  const arr = clientsArray();
+  document.getElementById('st-cl').textContent = arr.length;
+  const totalComp = arr.reduce((s,c) => s + (c.compras?.['25']?.length||0) + (c.compras?.['35']?.length||0) + (c.compras?.['100']?.length||0), 0);
+  document.getElementById('st-comp').textContent = totalComp;
+  let desc = 0;
+  arr.forEach(c => ['25','35','100'].forEach(p => { desc += Math.floor((c.compras?.[p]?.length||0)/10); }));
+  document.getElementById('st-desc').textContent = desc;
+
+  const pending = arr.filter(c => ['25','35','100'].some(p => { const n=c.compras?.[p]?.length||0; return n>0&&n%10===0; }));
+  document.getElementById('notif-area').innerHTML = pending.map(c => {
+    const pres = ['25','35','100'].filter(p => { const n=c.compras?.[p]?.length||0; return n>0&&n%10===0; });
+    return `<div class="notif-banner" onclick="openClient('${c.id}')">
+      <div class="notif-icon">🎉</div>
+      <div class="notif-text">
+        <div class="notif-title">${c.nombre} — Descuento pendiente</div>
+        <div class="notif-sub">Aplica en: ${pres.map(p=>p+' Lb').join(', ')}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderRecentActivity();
+}
+
+function renderRecentActivity() {
+  const rl = document.getElementById('recent-list');
+  if (!activity.length) { rl.innerHTML='<div class="empty"><div class="empty-ico">📋</div>Sin actividad aún</div>'; return; }
+  rl.innerHTML = activity.slice(0,8).map(a =>
+    `<div class="purch-item"><span>${a.text}</span><span style="font-size:11px;color:var(--muted);">${a.time}</span></div>`
+  ).join('');
+}
+
+// ══════════════════════════════════════════
+//  CLIENT LIST
+// ══════════════════════════════════════════
+function renderClientList() {
+  const q = (document.getElementById('cl-search')?.value||'').toLowerCase();
+  const list = document.getElementById('client-list');
+  const arr = clientsArray().filter(c => c.nombre?.toLowerCase().includes(q) || c.id?.toLowerCase().includes(q));
+  if (!arr.length) { list.innerHTML='<div class="empty"><div class="empty-ico">👥</div>No se encontraron clientes</div>'; return; }
+  list.innerHTML = arr.map(clientRowHTML).join('');
+}
+
+function clientRowHTML(c) {
+  const t25=c.compras?.['25']?.length||0, t35=c.compras?.['35']?.length||0, t100=c.compras?.['100']?.length||0;
+  const hasDisc = ['25','35','100'].some(p => { const n=c.compras?.[p]?.length||0; return n>0&&n%10===0; });
+  return `<div class="client-row" onclick="openClient('${c.id}')">
+    <div style="flex:1;">
+      <div class="client-name">${c.nombre}${hasDisc?' <span style="color:#34d399;font-size:12px;">★</span>':''}</div>
+      <div class="client-sub">${c.tel} · ${c.id}</div>
+      <div class="client-badges">
+        ${t25>0?`<span class="badge badge-25">25 Lb: ${t25}</span>`:''}
+        ${t35>0?`<span class="badge badge-35">35 Lb: ${t35}</span>`:''}
+        ${t100>0?`<span class="badge badge-100">100 Lb: ${t100}</span>`:''}
+        ${t25===0&&t35===0&&t100===0?'<span style="font-size:11px;color:var(--muted);">Sin compras</span>':''}
+      </div>
+    </div>
+    <span style="color:var(--accent2);font-size:22px;padding-left:8px;">›</span>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  REGISTER CLIENT
+// ══════════════════════════════════════════
+window.registerClient = async function() {
+  const nombre = document.getElementById('r-nombre').value.trim();
+  const tel = document.getElementById('r-tel').value.trim();
+  if (!nombre || !tel) { alert('Por favor llena todos los campos'); return; }
+
+  const id = genId();
+  const client = {id, nombre, tel, compras:{'25':[],'35':[],'100':[]}, fechaReg: today()};
+  await set(ref(firebaseDB, `clients/${id}`), client);
+  await addActivity(`Nuevo cliente: ${nombre}`, 'success');
+
+  document.getElementById('reg-result').style.display = 'block';
+  document.getElementById('qr-new-id').textContent = id;
+  makeQR('qr-new', id);
+  document.getElementById('r-nombre').value = '';
+  document.getElementById('r-tel').value = '';
+};
+
+// ══════════════════════════════════════════
+//  OPEN CLIENT MODAL
+// ══════════════════════════════════════════
+window.openClient = function(id) {
+  const c = {...clients[id], id};
+  if (!c.nombre) return;
+  document.getElementById('mc-name').textContent = c.nombre;
+
+  const presInfo = [
+    {key:'25',label:'25 Lb',cls:'fill-25',bCls:'badge-25'},
+    {key:'35',label:'35 Lb',cls:'fill-35',bCls:'badge-35'},
+    {key:'100',label:'100 Lb',cls:'fill-100',bCls:'badge-100'},
+  ];
+
+  const progHTML = presInfo.map(p => {
+    const n = c.compras?.[p.key]?.length||0;
+    const inCycle = n%10;
+    const pct = n===0?0:inCycle===0?100:(inCycle/10*100);
+    const cycles = Math.floor(n/10);
+    const rem = inCycle===0&&n>0?0:10-inCycle;
+    const disc = n>0&&inCycle===0;
+    return `<div class="prog-row">
+      <div class="prog-label">
+        <span><span class="badge ${p.bCls}" style="margin-right:5px;">${p.label}</span>${n} compras</span>
+        <span style="color:${disc?'#34d399':'var(--muted)'}">${disc?'🎉 ¡Descuento!':rem>0?`${rem} para descuento`:'—'}</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill ${p.cls}" style="width:${pct}%"></div></div>
+      ${cycles>0?`<div style="font-size:11px;color:var(--muted);margin-top:3px;">Ciclos completados: ${cycles}</div>`:''}
+    </div>`;
+  }).join('');
+
+  const allP = [
+    ...(c.compras?.['25']||[]).map(d=>({d,p:'25'})),
+    ...(c.compras?.['35']||[]).map(d=>({d,p:'35'})),
+    ...(c.compras?.['100']||[]).map(d=>({d,p:'100'})),
+  ].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,10);
+
+  const histHTML = allP.length ? allP.map(x =>
+    `<div class="purch-item"><span class="badge badge-${x.p}">${x.p} Lb</span><span style="color:var(--muted);font-size:12px;">${x.d}</span></div>`
+  ).join('') : '<div style="font-size:13px;color:var(--muted);padding:8px 0;">Sin compras aún</div>';
+
+  document.getElementById('mc-body').innerHTML = `
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">📞 ${c.tel} &nbsp;·&nbsp; Desde ${c.fechaReg}</div>
+    ${progHTML}
+    <div class="divider"></div>
+    <div class="card-title">Historial reciente</div>
+    ${histHTML}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;">
+      <button class="btn btn-primary" style="margin:0;" onclick="openCompraOv('${c.id}')">+ Compra</button>
+      <button class="btn btn-secondary" style="margin:0;" onclick="openQROv('${c.id}')">Ver QR</button>
+    </div>
+    <button class="btn btn-danger" style="margin-top:8px;padding:9px;" onclick="deleteClient('${c.id}')">🗑 Eliminar cliente</button>
+  `;
+  document.getElementById('ov-client').classList.add('show');
+};
+
+window.deleteClient = async function(id) {
+  if (!confirm('¿Eliminar este cliente? Esta acción no se puede deshacer.')) return;
+  await remove(ref(firebaseDB, `clients/${id}`));
+  closeOv('ov-client');
+};
+
+// ══════════════════════════════════════════
+//  COMPRA
+// ══════════════════════════════════════════
+window.openCompraOv = function(clientId) {
+  compraClientId = clientId; presSel = null;
+  document.querySelectorAll('.pres-btn').forEach(b => b.classList.remove('sel'));
+  document.getElementById('pres-preview').innerHTML = '';
+  const c = {...clients[clientId], id: clientId};
+  document.getElementById('ov-comp-client').textContent = '👤 ' + c.nombre;
+  closeOv('ov-client');
+  document.getElementById('ov-compra').classList.add('show');
+};
+
+window.selPres = function(el, pres) {
+  document.querySelectorAll('.pres-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel'); presSel = pres;
+  const c = clients[compraClientId];
+  const cur = c?.compras?.[pres]?.length||0;
+  const next = cur+1;
+  const prev = document.getElementById('pres-preview');
+  if (next%10===0) {
+    prev.innerHTML = `<div class="alert-party">🎉 ¡COMPRA #${next}!<br>El cliente gana DESCUENTO en ${pres} Lb</div>`;
+  } else {
+    const rem = 10-(next%10);
+    prev.innerHTML = `<div class="alert alert-info">Compra ${next}/10 en ${pres} Lb · Faltan ${rem} para descuento</div>`;
+  }
+};
+
+window.confirmPurchase = async function() {
+  if (!compraClientId || !presSel) { alert('Selecciona una presentación'); return; }
+  const c = {...clients[compraClientId], id: compraClientId};
+  const compras = c.compras || {'25':[],'35':[],'100':[]};
+  compras[presSel] = [...(compras[presSel]||[]), today()];
+  const total = compras[presSel].length;
+  const isDisc = total%10===0;
+
+  await set(ref(firebaseDB, `clients/${compraClientId}/compras`), compras);
+  await addActivity(`${c.nombre} — ${presSel} Lb${isDisc?' 🎉 DESCUENTO':''}`, isDisc?'party':'info');
+  closeOv('ov-compra');
+  if (isDisc) {
+    setTimeout(() => alert(`🎉 ¡DESCUENTO!\n\n${c.nombre} completó 10 compras de ${presSel} Lb.\n¡Aplica el descuento en este cilindro!`), 300);
+  }
+};
+
+// ══════════════════════════════════════════
+//  QR MODAL
+// ══════════════════════════════════════════
+window.openQROv = function(clientId) {
+  const c = {...clients[clientId], id: clientId};
+  document.getElementById('qrm-name').textContent = c.nombre;
+  document.getElementById('qrm-id').textContent = c.id;
+  makeQR('qrm-code', c.id);
+  closeOv('ov-client');
+  document.getElementById('ov-qr').classList.add('show');
+};
+
+// ══════════════════════════════════════════
+//  SEARCH
+// ══════════════════════════════════════════
+window.renderScanResults = function() {
+  const q = document.getElementById('scan-q').value.toLowerCase();
+  const res = document.getElementById('scan-results');
+  if (!q) { res.innerHTML=''; return; }
+  const found = clientsArray().filter(c => c.nombre?.toLowerCase().includes(q) || c.id?.toLowerCase().includes(q));
+  if (!found.length) { res.innerHTML='<div class="alert alert-info">No se encontró ningún cliente</div>'; return; }
+  res.innerHTML = found.map(clientRowHTML).join('');
+};
+
+window.renderCompraSearch = function() {
+  const q = document.getElementById('comp-q').value.toLowerCase();
+  const res = document.getElementById('comp-results');
+  if (!q) { res.innerHTML=''; return; }
+  const found = clientsArray().filter(c => c.nombre?.toLowerCase().includes(q));
+  if (!found.length) { res.innerHTML='<div class="alert alert-info">No se encontró ningún cliente</div>'; return; }
+  res.innerHTML = found.map(c =>
+    `<div class="client-row" onclick="openCompraOv('${c.id}')">
+      <div><div class="client-name">${c.nombre}</div><div class="client-sub">${c.id}</div></div>
+      <span style="color:var(--accent2);font-size:22px;">+</span>
+    </div>`
+  ).join('');
+};
+
+window.renderClientList = renderClientList;
+
+// ══════════════════════════════════════════
+//  MI CUENTA (cliente)
+// ══════════════════════════════════════════
+function renderMiCuenta() {
+  const c = {...clients[currentClientId], id: currentClientId};
+  if (!c.nombre) return;
+
+  const presInfo = [
+    {key:'25',label:'25 Lb',cls:'fill-25',bCls:'badge-25'},
+    {key:'35',label:'35 Lb',cls:'fill-35',bCls:'badge-35'},
+    {key:'100',label:'100 Lb',cls:'fill-100',bCls:'badge-100'},
+  ];
+
+  const progHTML = presInfo.map(p => {
+    const n = c.compras?.[p.key]?.length||0;
+    if (n===0) return '';
+    const inCycle = n%10;
+    const pct = inCycle===0?100:(inCycle/10*100);
+    const cycles = Math.floor(n/10);
+    const rem = inCycle===0&&n>0?0:10-inCycle;
+    const disc = n>0&&inCycle===0;
+    const filled = inCycle===0?10:inCycle;
+    const stars = Array.from({length:10},(_,i) => {
+      if (i<filled-1) return '<div class="star star-full">✓</div>';
+      if (i===filled-1&&disc) return '<div class="star star-promo">★</div>';
+      if (i<filled) return '<div class="star star-full">✓</div>';
+      return '<div class="star star-empty">·</div>';
+    }).join('');
+    return `<div class="card">
+      <div class="card-title"><span class="badge ${p.bCls}" style="margin-right:6px;">${p.label}</span>${disc?'🎉 ¡Descuento listo!':''}</div>
+      ${disc?`<div class="alert alert-success">¡Tienes un descuento disponible en ${p.label}! Preséntalo al empleado.</div>`:''}
+      <div class="stars" style="margin-bottom:12px;">${stars}</div>
+      <div class="prog-bar"><div class="prog-fill ${p.cls}" style="width:${pct}%"></div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;">${n} compras · ${cycles} descuentos ganados · ${rem>0?`${rem} para siguiente descuento`:disc?'¡Descuento pendiente!':''}</div>
+    </div>`;
+  }).join('');
+
+  const allP = [
+    ...(c.compras?.['25']||[]).map(d=>({d,p:'25'})),
+    ...(c.compras?.['35']||[]).map(d=>({d,p:'35'})),
+    ...(c.compras?.['100']||[]).map(d=>({d,p:'100'})),
+  ].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,12);
+
+  const histHTML = allP.length ? allP.map(x =>
+    `<div class="purch-item"><span class="badge badge-${x.p}">${x.p} Lb</span><span style="color:var(--muted);font-size:12px;">${x.d}</span></div>`
+  ).join('') : '<div style="font-size:13px;color:var(--muted);padding:8px 0;">Sin compras aún</div>';
+
+  document.getElementById('micuenta-content').innerHTML = `
+    <div class="card">
+      <div class="card-title">👤 Mi perfil</div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;">${c.nombre}</div>
+      <div style="font-size:13px;color:var(--muted);">📞 ${c.tel} · Cliente desde ${c.fechaReg}</div>
+      <button class="btn btn-secondary" style="margin-top:12px;" onclick="openQROv_client('${c.id}')">📱 Ver mi QR</button>
+    </div>
+    ${progHTML || '<div class="alert alert-info">Aún no tienes compras. ¡Visítanos y empieza a acumular!</div>'}
+    <div class="card"><div class="card-title">Historial</div>${histHTML}</div>
+  `;
+}
+
+window.openQROv_client = function(id) {
+  const c = {...clients[id], id};
+  document.getElementById('qrm-name').textContent = c.nombre;
+  document.getElementById('qrm-id').textContent = c.id;
+  makeQR('qrm-code', c.id);
+  document.getElementById('ov-qr').classList.add('show');
+};
+
+// ══════════════════════════════════════════
+//  OVERLAY CLICK OUTSIDE
+// ══════════════════════════════════════════
+document.querySelectorAll('.overlay').forEach(ov =>
+  ov.addEventListener('click', function(e) { if(e.target===this) this.classList.remove('show'); })
+);
+
+// ══════════════════════════════════════════
+//  AUTO CONNECT
+// ══════════════════════════════════════════
+tryAutoConnect();
+</script>
+</body>
+</html>
